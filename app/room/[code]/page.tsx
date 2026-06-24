@@ -6,6 +6,7 @@ import type { GameSession } from '@/lib/db'
 import Avatar from '@/components/Avatar'
 import styles from './room.module.css'
 import { calculateAverageRanking, type Player } from '@/lib/gameEngine'
+import { markReadyForNext, advanceToNextRound } from '@/lib/db'
 
 import NetworkGraph, { buildNetworkData} from '@/components/NetworkGraph'
 
@@ -25,6 +26,7 @@ export default function RoomPage({ params }: Props) {
   const dragOver = useRef<number | null>(null)
   const touchStartY = useRef<number>(0)
   const itemHeight = useRef<number>(72)
+  const [readyPressed, setReadyPressed] = useState(false)
 
   useEffect(() => {
     const raw = localStorage.getItem(`synergia_player_${code}`)
@@ -50,6 +52,28 @@ export default function RoomPage({ params }: Props) {
       }
     }
   }, [session?.status, session?.currentRound]) // eslint-disable-line
+
+  useEffect(() => {
+    if (!session || !me) return
+    if (session.status !== 'round_ended') return
+    if (!session.autoMode) return
+
+    const players = Object.values(session.players || {}) as Player[]
+    const ready = Object.keys(session.readyForNext || {})
+    if (ready.length >= players.length && players.length > 1) {
+      // Herkes hazır, ilk hazır olan geçişi tetikler
+      if (ready[0] === me.id) {
+        advanceToNextRound(code, session)
+      }
+    }
+  }, [session?.readyForNext, session?.status])
+
+  useEffect(() => {
+    if (session?.status === 'round_active') {
+      setReadyPressed(false)
+      setVoted(false)
+    }
+  }, [session?.status, session?.currentRound])
 
   if (!session || !me) {
     return <div className="page-center"><div className="spinner" style={{ width: 32, height: 32 }} /></div>

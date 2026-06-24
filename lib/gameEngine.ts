@@ -86,6 +86,12 @@ export function calculateAverageRanking(
   return results
 }
 
+export function pickRandomTopics(count: number): string[] {
+  const all = Object.keys(TOPIC_CATEGORIES)
+  const shuffled = [...all].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, Math.min(count, all.length))
+}
+
 /**
  * Tüm turlardaki adjacency satırlarını birleştirerek
  * tam Adjacency Matrix döner.

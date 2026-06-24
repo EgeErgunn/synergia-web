@@ -8,6 +8,8 @@ import Avatar from '@/components/Avatar'
 import styles from './host.module.css'
 import { subscribeSession, startRound, endRound, finishGame, archiveSession, saveDatasets, getDatasets } from '@/lib/db'
 import NetworkGraph, { buildNetworkData } from '@/components/NetworkGraph'
+import { pickRandomTopics } from '@/lib/gameEngine'
+import { startAutoGame } from '@/lib/db'
 
 interface Props { params: { code: string } }
 
@@ -23,6 +25,7 @@ export default function HostPage({ params }: Props) {
   const [showIpInput, setShowIpInput] = useState(false)
   const [datasets, setDatasets]       = useState<Record<string, any> | null>(null)
   const [showLabels, setShowLabels]   = useState(true)
+  const [autoLoading, setAutoLoading] = useState(false)
 
   useEffect(() => {
     const origin = window.location.origin
@@ -95,6 +98,13 @@ export default function HostPage({ params }: Props) {
     await finishGame(code)
     router.push(`/room/${code}`)
   }
+
+  async function handleAutoGame() {
+  setAutoLoading(true)
+  const topics = pickRandomTopics(20)
+  await startAutoGame(code, topics)
+  setAutoLoading(false)
+}
 
   const totalScores: Record<string, number> = {}
   players.forEach(p => { totalScores[p.id] = 0 })
@@ -234,13 +244,22 @@ export default function HostPage({ params }: Props) {
 })()}
 
 <div className="sep" />  {/* ← MEVCUT SEP */}
-                  <div className="sep" />
                   <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: '1.25rem' }}>
                     Yeni tur için tema seç:
                   </p>
                 </>
               )}
-
+              {session.status === 'lobby' && players.length >= 2 && (
+                  <button
+                    className="btn btn-accent"
+                    style={{ width: '100%', justifyContent: 'center', padding: '13px', marginBottom: 8 }}
+                    onClick={handleAutoGame}
+                    disabled={autoLoading || players.length < 2}
+                  >
+                    {autoLoading ? <span className="spinner" /> : '🎲 20 Rastgele Tur Başlat'}
+                  </button>
+                )}
+                
               {session.status === 'lobby' && (
                 <>
                   <h2 className={styles.sectionTitle}>Turu başlat</h2>

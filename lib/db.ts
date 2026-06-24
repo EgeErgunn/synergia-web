@@ -22,6 +22,9 @@ export interface GameSession {
   votes: Record<string, Vote>
   roundResults: RoundResult[]
   createdAt: number
+  plannedTopics?: string[]
+  autoMode?: boolean
+  readyForNext?: Record<string, boolean>
 }
 
 // ── Session CRUD ──────────────────────────────────────────────────────────────
@@ -134,4 +137,51 @@ export async function getDatasets(
 ): Promise<Record<string, PlayerDataset> | null> {
   const snap = await get(ref(db, `sessions/${roomCode}/datasets`))
   return snap.exists() ? snap.val() : null
+}
+
+// Otomatik tur sistemi
+export async function startAutoGame(
+  roomCode: string,
+  plannedTopics: string[]
+): Promise<void> {
+  await update(ref(db, `sessions/${roomCode}`), {
+    plannedTopics,
+    autoMode: true,
+    currentRound: 0,
+    status: 'lobby',
+    votes: {},
+    readyForNext: {},
+  })
+  // İlk turu başlat
+  await startRound(roomCode, plannedTopics[0], 1)
+}
+
+export async function markReadyForNext(
+  roomCode: string,
+  playerId: string
+): Promise<void> {
+  await set(ref(db, `sessions/${roomCode}/readyForNext/${playerId}`), true)
+}
+
+export async function advanceToNextRound(
+  roomCode: string,
+  session: GameSession
+): Promise<void> {
+  const plannedTopics: string[] = session.plannedTopics || []
+  const nextRound = (session.currentRound || 0) + 1
+
+  if (nextRound > plannedTopics.length) {
+    // 20 tur bitti
+    await update(ref(db, `sessions/${roomCode}`), { status: 'finished' })
+    return
+  }
+
+  const nextTopic = plannedTopics[nextRound - 1]
+  await update(ref(db, `sessions/${roomCode}`), {
+    status: 'round_active',
+    currentTopic: nextTopic,
+    currentRound: nextRound,
+    votes: {},
+    readyForNext: {},
+  })
 }
