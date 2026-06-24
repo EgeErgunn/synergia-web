@@ -1,0 +1,183 @@
+.root {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Arka plan orb'ları */
+.bgOrb1 {
+  position: absolute;
+  width: 320px; height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,240,96,0.06) 0%, transparent 70%);
+  top: -60px; left: -80px;
+  pointer-events: none;
+}
+
+.bgOrb2 {
+  position: absolute;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(138,127,255,0.05) 0%, transparent 70%);
+  bottom: -40px; right: -60px;
+  pointer-events: none;
+}
+
+/* Kart */
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 2px solid rgba(200,240,96,0.15);
+  border-radius: 28px;
+  padding: 2rem;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+
+/* Logo */
+.logoWrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+.logoMark {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #0a0a0a;
+  font-size: 24px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(200,240,96,0.3);
+}
+
+.logoTitle {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.logoSub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1.5rem 0;
+}
+
+/* Başlık */
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+/* Input */
+.inputWrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.nameInput {
+  font-size: 16px !important;
+  padding: 13px 16px !important;
+  border-radius: 14px !important;
+  border-width: 2px !important;
+  font-weight: 500 !important;
+}
+
+.nameInput:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(200,240,96,0.12);
+}
+
+.charCount {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--hint);
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+
+/* Hata */
+.errorBox {
+  background: rgba(255,95,95,0.08);
+  border: 1px solid rgba(255,95,95,0.25);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #ff5f5f;
+  margin-bottom: 10px;
+}
+
+/* Katıl butonu */
+.joinBtn {
+  width: 100%;
+  justify-content: center;
+  padding: 14px !important;
+  font-size: 16px !important;
+  border-radius: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+  margin-top: 4px;
+  box-shadow: 0 4px 20px rgba(200,240,96,0.25);
+  transition: all 0.15s ease !important;
+}
+
+.joinBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(200,240,96,0.35) !important;
+}
+
+.joinBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.joinBtn:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* Not found */
+.notFound {
+  text-align: center;
+  max-width: 340px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 28px;
+  padding: 2.5rem 2rem;
+}
+
+.notFoundEmoji { font-size: 48px; margin-bottom: 12px; }
+.notFoundTitle { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.notFoundSub   { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; }

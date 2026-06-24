@@ -1,0 +1,120 @@
+.root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.noise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 200px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.logoBadge {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  animation: pulse-ring 2.5s ease infinite;
+}
+
+.logoMark {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0a0a0a;
+  line-height: 1;
+}
+
+.title {
+  font-size: clamp(3rem, 10vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.sub {
+  font-size: 1.1rem;
+  color: var(--muted);
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.actions {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.hostBtn {
+  width: 100%;
+  justify-content: center;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: var(--r-lg);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--hint);
+  font-size: 13px;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.joinRow {
+  display: flex;
+  gap: 8px;
+}
+
+.codeInput {
+  flex: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 15px;
+}
+
+.error {
+  font-size: 13px;
+  color: var(--danger);
+  text-align: center;
+}
+
+.footer {
+  position: absolute;
+  bottom: 2rem;
+  font-size: 12px;
+  color: var(--hint);
+  letter-spacing: 0.05em;
+  z-index: 1;
+}

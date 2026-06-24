@@ -1,0 +1,165 @@
+'use client'
+import { use, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getSession } from '@/lib/db'
+import type { GameSession } from '@/lib/db'
+import { buildAdjacencyMatrix, type Player } from '@/lib/gameEngine'
+import Avatar from '@/components/Avatar'
+import styles from './results.module.css'
+
+interface Props { params: Promise<{ code: string }> }
+
+export default function ResultsPage({ params }: Props) {
+  const { code } = use(params)
+  const router = useRouter()
+  const [session, setSession] = useState<GameSession | null>(null)
+
+  useEffect(() => {
+    getSession(code).then(s => { if (!s) router.push('/'); else setSession(s) })
+  }, [code, router])
+
+  if (!session) {
+    return <div className="page-center"><div className="spinner" style={{ width: 32, height: 32 }} /></div>
+  }
+
+  const players = Object.values(session.players || {}) as Player[]
+  const results  = session.roundResults || []
+
+  // Kümülatif toplam puan
+  const totalScores: Record<string, number> = {}
+  players.forEach(p => { totalScores[p.id] = 0 })
+  results.forEach(r => {
+    Object.entries(r.scores || {}).forEach(([id, pts]) => {
+      totalScores[id] = (totalScores[id] || 0) + pts
+    })
+  })
+  const sorted = [...players].sort((a, b) => (totalScores[b.id] || 0) - (totalScores[a.id] || 0))
+  const matrix = buildAdjacencyMatrix(players, results)
+  const maxVal = Math.max(...matrix.flat().filter(v => v > 0), 1)
+
+  const medals = ['🥇', '🥈', '🥉']
+
+  return (
+    <div className={styles.root}>
+      <header className={styles.header}>
+        <div className={styles.logoMark}>S</div>
+        <div>
+          <p style={{ fontWeight: 600 }}>Synergia</p>
+          <p style={{ fontSize: 12, color: 'var(--muted)' }}>Final sonuçları · {code}</p>
+        </div>
+        <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => router.push('/')}>
+          Yeni oyun →
+        </button>
+      </header>
+
+      <div className={styles.body}>
+        {/* ── Podium ── */}
+        <section className={`card anim-fade-up ${styles.podiumCard}`}>
+          <p className="label">Genel sıralama</p>
+          <div className={styles.podium}>
+            {sorted.map((p, i) => {
+              const pi = players.findIndex(x => x.id === p.id)
+              return (
+                <div key={p.id} className={styles.podiumRow}>
+                  <span className={styles.medal}>{medals[i] || `${i + 1}.`}</span>
+                  <Avatar name={p.name} index={pi} size={40} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: i === 0 ? 700 : 500, fontSize: 15 }}>{p.name}</p>
+                    <div className={styles.barWrap}>
+                      <div
+                        className={styles.bar}
+                        style={{
+                          width: `${(totalScores[p.id] || 0) / (totalScores[sorted[0].id] || 1) * 100}%`,
+                          opacity: 0.4 + 0.6 * (1 - i / sorted.length)
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className={`mono ${styles.pts}`}>{totalScores[p.id] || 0}</span>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* ── Tur tur breakdown ── */}
+        <section className={`card anim-fade-up anim-delay-1 ${styles.breaksCard}`}>
+          <p className="label" style={{ marginBottom: '1rem' }}>Tur bazlı puanlar</p>
+          <div className={styles.breakTable}>
+            <div className={styles.breakHeader}>
+              <span>Oyuncu</span>
+              {results.map((r, i) => <span key={i} style={{ textAlign: 'right' }}>{r.topic}</span>)}
+              <span style={{ textAlign: 'right' }}>Toplam</span>
+            </div>
+            {sorted.map((p, pi) => (
+              <div key={p.id} className={styles.breakRow}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Avatar name={p.name} index={players.findIndex(x => x.id === p.id)} size={26} />
+                  <span style={{ fontSize: 13 }}>{p.name}</span>
+                </div>
+                {results.map((r, i) => (
+                  <span key={i} className="mono" style={{ textAlign: 'right', fontSize: 13, color: 'var(--muted)' }}>
+                    {r.scores?.[p.id] || 0}
+                  </span>
+                ))}
+                <span className="mono" style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>
+                  {totalScores[p.id] || 0}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Adjacency Matrix ── */}
+        <section className={`card anim-fade-up anim-delay-2 ${styles.matrixCard}`}>
+          <p className="label">Adjacency matrix</p>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 1rem' }}>
+            Satır → oylayan · Sütun → hedef · Değer = verilen toplam puan
+          </p>
+          <div className={styles.matrixWrap}>
+            <table className={styles.matrix}>
+              <thead>
+                <tr>
+                  <th className={styles.mCell} />
+                  {players.map(p => (
+                    <th key={p.id} className={`${styles.mCell} ${styles.mHead}`}>
+                      {p.name.split(' ')[0]}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {players.map((voter, i) => (
+                  <tr key={voter.id}>
+                    <td className={`${styles.mCell} ${styles.mRowHead}`}>{voter.name.split(' ')[0]}</td>
+                    {players.map((target, j) => {
+                      const val = matrix[i]?.[j] || 0
+                      const intensity = i === j ? 0 : val / maxVal
+                      return (
+                        <td
+                          key={target.id}
+                          className={styles.mCell}
+                          style={{
+                            background: i === j
+                              ? 'var(--surface2)'
+                              : `rgba(200,240,96,${intensity * 0.35})`,
+                            color: i === j ? 'var(--hint)' : undefined,
+                          }}
+                        >
+                          {i === j ? '—' : val}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--hint)', marginTop: '0.75rem' }}>
+            Yeşil yoğunluk = yüksek puan · Bu veri network graph için kullanılabilir
+          </p>
+        </section>
+      </div>
+    </div>
+  )
+}

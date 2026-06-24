@@ -1,0 +1,389 @@
+/* ── LOBI ─────────────────────────────────────────────────────────────────── */
+
+.lobbyCard {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 24px !important;
+  border: 2px solid rgba(200,240,96,0.2) !important;
+  background: linear-gradient(160deg, #131313 0%, #0e0e0e 100%) !important;
+}
+
+.lobbyTop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lobbyName {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.playerGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.playerChip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.waitingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+/* ── RANKING EKRANI ───────────────────────────────────────────────────────── */
+
+.rankPage {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  padding-bottom: 140px;
+  background: var(--bg);
+}
+
+.rankHeader {
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 2px solid rgba(200,240,96,0.1);
+  background: linear-gradient(180deg, #131313 0%, #0f0f0f 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.rankHeaderInner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.rankTitle {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.rankTopic {
+  margin-top: 6px;
+}
+
+.topicChip {
+  display: inline-block;
+  padding: 5px 14px;
+  background: rgba(200,240,96,0.12);
+  border: 1.5px solid rgba(200,240,96,0.3);
+  border-radius: 99px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.rankHint {
+  font-size: 12px;
+  color: var(--hint);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  background: var(--surface2);
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+}
+
+.rankNums {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rankNumDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+
+.rankNumFirst {
+  background: rgba(200,240,96,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 8px rgba(200,240,96,0.2);
+}
+
+.rankNumLast {
+  background: rgba(255,95,95,0.12);
+  border-color: rgba(255,95,95,0.4);
+  color: #ff5f5f;
+}
+
+/* ── SIRALAMA LİSTESİ ─────────────────────────────────────────────────────── */
+
+.rankList {
+  padding: 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rankItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.15s, background 0.15s;
+  position: relative;
+}
+
+.rankItem:hover {
+  border-color: rgba(255,255,255,0.18);
+  background: var(--surface2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.rankItem:active { cursor: grabbing; }
+
+.rankItemDragging {
+  transform: scale(1.04) rotate(0.5deg) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important;
+  border-color: var(--accent) !important;
+  background: #1a1a14 !important;
+  z-index: 10;
+}
+
+.rankItemFirst {
+  border-color: rgba(200,240,96,0.35);
+  background: linear-gradient(135deg, rgba(200,240,96,0.06) 0%, transparent 60%);
+}
+
+.rankItemLast {
+  border-color: rgba(255,95,95,0.25);
+  background: linear-gradient(135deg, rgba(255,95,95,0.05) 0%, transparent 60%);
+}
+
+.rankBadge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+
+.rankBadgeFirst {
+  background: rgba(200,240,96,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-size: 18px;
+  box-shadow: 0 0 10px rgba(200,240,96,0.25);
+}
+
+.rankBadgeLast {
+  background: rgba(255,95,95,0.1);
+  border-color: rgba(255,95,95,0.4);
+  font-size: 18px;
+}
+
+.rankName {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.arrowBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.arrowBtn {
+  width: 28px;
+  height: 24px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  padding: 0;
+}
+
+.arrowBtn:hover:not(:disabled) {
+  background: var(--border2);
+  color: var(--text);
+  border-color: rgba(255,255,255,0.3);
+  transform: scale(1.1);
+}
+
+.arrowBtn:disabled {
+  opacity: 0.18;
+  cursor: not-allowed;
+}
+
+.dragHandle {
+  color: var(--hint);
+  opacity: 0.4;
+  flex-shrink: 0;
+  cursor: grab;
+}
+
+/* ── FOOTER ───────────────────────────────────────────────────────────────── */
+
+.rankFooter {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  padding: 1rem 1.25rem 1.5rem;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  z-index: 20;
+}
+
+.footerHint {
+  font-size: 12px;
+  color: var(--hint);
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+
+/* ── OY VERİLDİ ───────────────────────────────────────────────────────────── */
+
+.waitCard {
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  border-radius: 24px !important;
+  border: 2px solid rgba(200,240,96,0.2) !important;
+}
+
+.checkCircle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  animation: pulse-ring 2s ease infinite;
+  box-shadow: 0 0 24px rgba(200,240,96,0.35);
+}
+
+.voteProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── TUR SONU SONUÇLAR ────────────────────────────────────────────────────── */
+
+.resultsCard {
+  max-width: 420px;
+  width: 100%;
+  border-radius: 24px !important;
+  border: 2px solid rgba(200,240,96,0.15) !important;
+}
+
+.resultsLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.resultsTopic {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+}
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.resultRow:last-child { border-bottom: none; }
+
+.resultRowMe {
+  background: rgba(200,240,96,0.06);
+  border-radius: 12px;
+  padding: 10px 10px;
+  margin: 0 -4px;
+  border-bottom: none !important;
+}
+
+.resultRank {
+  font-size: 20px;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.resultAvg {
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ── OYUN BİTTİ ───────────────────────────────────────────────────────────── */
+
+.finishedCard {
+  max-width: 360px;
+  width: 100%;
+  border-radius: 24px !important;
+  text-align: center;
+}
