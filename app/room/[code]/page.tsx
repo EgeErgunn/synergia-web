@@ -1,12 +1,12 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { subscribeSession, submitVote } from '@/lib/db'
 import type { GameSession } from '@/lib/db'
 import Avatar from '@/components/Avatar'
 import styles from './room.module.css'
 import { calculateAverageRanking, type Player } from '@/lib/gameEngine'
-import { markReadyForNext, advanceToNextRound } from '@/lib/db'
+import { subscribeSession, submitVote, markReadyForNext, advanceToNextRound, getDatasets } from '@/lib/db'
+
 
 import NetworkGraph, { buildNetworkData} from '@/components/NetworkGraph'
 
@@ -27,12 +27,18 @@ export default function RoomPage({ params }: Props) {
   const touchStartY = useRef<number>(0)
   const itemHeight = useRef<number>(72)
   const [readyPressed, setReadyPressed] = useState(false)
+  const [datasets, setDatasets] = useState<Record<string, any> | null>(null)
 
   useEffect(() => {
     const raw = localStorage.getItem(`synergia_player_${code}`)
     if (!raw) { router.replace(`/join/${code}`); return }
     setMe(JSON.parse(raw))
   }, [code, router])
+
+  useEffect(() => {
+    if (!session?.roundResults?.length) return
+    getDatasets(code).then(setDatasets)
+  }, [session?.roundResults?.length, code])
 
   useEffect(() => {
     return subscribeSession(code, s => {
@@ -60,13 +66,14 @@ export default function RoomPage({ params }: Props) {
 
     const players = Object.values(session.players || {}) as Player[]
     const ready = Object.keys(session.readyForNext || {})
+
     if (ready.length >= players.length && players.length > 1) {
-      // Herkes hazır, ilk hazır olan geçişi tetikler
-      if (ready[0] === me.id) {
+      const sortedIds = players.map(p => p.id).sort()
+      if (sortedIds[0] === me.id) {
         advanceToNextRound(code, session)
       }
     }
-  }, [session?.readyForNext, session?.status])
+  }, [session?.readyForNext])
 
   useEffect(() => {
     if (session?.status === 'round_active') {
@@ -74,6 +81,43 @@ export default function RoomPage({ params }: Props) {
       setVoted(false)
     }
   }, [session?.status, session?.currentRound])
+
+  useEffect(() => {
+  if (!session || !me) return
+  if (!session.autoMode) return
+  if (session.status !== 'round_active') return
+
+  const players = Object.values(session.players || {}) as Player[]
+  const voteCount = Object.keys(session.votes || {}).length
+
+  if (players.length > 1 && voteCount >= players.length) {
+    const sortedIds = players.map(p => p.id).sort()
+    if (sortedIds[0] === me.id) {
+      import('@/lib/db').then(({ endRound, saveDatasets, getDatasets }) => {
+        import('@/lib/gameEngine').then(({ calculateRoundScores, updateDatasets }) => {
+          const votes = session.votes || {}
+          const result = calculateRoundScores(players, votes, session.currentTopic!)
+          getDatasets(code).then(existing => {
+            const updated = updateDatasets(
+              existing || {},
+              players,
+              votes,
+              session.currentTopic!,
+              (session.currentRound || 1) - 1
+            )
+            // Önce dataset kaydet, sonra round bitir
+            saveDatasets(code, updated).then(() => {
+              endRound(code, result).then(() => {
+                // Dataset state'i güncelle
+                setDatasets(updated)
+              })
+            })
+          })
+        })
+      })
+    }
+  }
+}, [session?.votes, session?.status])
 
   if (!session || !me) {
     return <div className="page-center"><div className="spinner" style={{ width: 32, height: 32 }} /></div>
@@ -334,44 +378,125 @@ export default function RoomPage({ params }: Props) {
     )
   }
 
-  // ── TUR BİTTİ ──
-  if (session.status === 'round_ended') {
+ // ── TUR BİTTİ ──
+if (session.status === 'round_ended') {
   const lastResult = session.roundResults?.[session.roundResults.length - 1]
   const lastVotes = session.votes || {}
   const ranking = calculateAverageRanking(players, lastVotes)
-
   const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
+  // Genel toplam skorlar
+  const totalScores: Record<string, number> = {}
+  players.forEach(p => { totalScores[p.id] = 0 })
+  ;(session.roundResults || []).forEach(r => {
+    Object.entries(r.scores || {}).forEach(([id, pts]) => {
+      totalScores[id] = (totalScores[id] || 0) + pts
+    })
+  })
+  const sortedByTotal = [...players].sort((a, b) => (totalScores[b.id] || 0) - (totalScores[a.id] || 0))
+
+  // Network graph verisi
+  const { players: np, edges } = buildNetworkData(session, datasets)
+
   return (
-    <div className="page-center">
-      <div className={`card anim-fade-up ${styles.resultsCard}`}>
-        <p className={styles.resultsLabel}>Tur {session.currentRound} · {lastResult?.topic}</p>
-        <p className={styles.resultsTopic}>Ortalama sıralama</p>
-        <div className="sep" />
-        {ranking.map(({ playerId, avgRank, displayRank }) => {
-          const p = players.find(x => x.id === playerId)
-          if (!p) return null
-          const pi = players.findIndex(x => x.id === p.id)
-          const isMe = p.id === me.id
-          return (
-            <div key={playerId} className={`${styles.resultRow} ${isMe ? styles.resultRowMe : ''}`}>
-              <span className={styles.resultRank}>
-                {medals[displayRank] || `${displayRank}.`}
-              </span>
-              <Avatar name={p.name} index={pi} size={32} />
-              <span style={{ flex: 1, fontSize: 14, fontWeight: isMe ? 600 : 400 }}>
-                {p.name} {isMe && <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(sen)</span>}
-              </span>
-              <span className={`mono ${styles.resultAvg}`}>
-                ⌀ {avgRank.toFixed(1)}
-              </span>
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem 1rem', gap: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: 460 }}>
+
+        {/* ── SON TUR SONUCU (büyük) ── */}
+        <div className={`card anim-fade-up ${styles.resultsCard}`} style={{ marginBottom: 12 }}>
+          <p className={styles.resultsLabel}>
+            Tur {session.currentRound} · {lastResult?.topic}
+          </p>
+          <p className={styles.resultsTopic}>Bu turun sıralaması</p>
+          <div className="sep" />
+          {ranking.map(({ playerId, avgRank, displayRank }) => {
+            const p = players.find(x => x.id === playerId)
+            if (!p) return null
+            const pi = players.findIndex(x => x.id === p.id)
+            const isMe = p.id === me.id
+            return (
+              <div key={playerId} className={`${styles.resultRow} ${isMe ? styles.resultRowMe : ''}`}>
+                <span className={styles.resultRank}>
+                  {medals[displayRank] || `${displayRank}.`}
+                </span>
+                <Avatar name={p.name} index={pi} size={34} />
+                <span style={{ flex: 1, fontSize: 15, fontWeight: isMe ? 700 : 500 }}>
+                  {p.name} {isMe && <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: 13 }}>(sen)</span>}
+                </span>
+                <span className={`mono ${styles.resultAvg}`}>
+                  ⌀ {avgRank.toFixed(1)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* ── GENEL SKOR (küçük) ── */}
+        <div className="card anim-fade-up" style={{ marginBottom: 12, padding: '0.75rem 1rem' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>
+            Genel sıralama
+          </p>
+          {sortedByTotal.map((p, i) => {
+            const pi = players.findIndex(x => x.id === p.id)
+            const isMe = p.id === me.id
+            return (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: i < sortedByTotal.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <span style={{ fontSize: 12, color: 'var(--muted)', width: 18, textAlign: 'center' }}>{i + 1}</span>
+                <Avatar name={p.name} index={pi} size={24} />
+                <span style={{ flex: 1, fontSize: 12, fontWeight: isMe ? 600 : 400 }}>
+                  {p.name}
+                </span>
+                <span className="mono" style={{ fontSize: 12, color: 'var(--accent)' }}>
+                  {totalScores[p.id] || 0}p
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* ── NETWORK GRAPH ── */}
+        {np.length > 1 && (
+          <div className="card anim-fade-up" style={{ marginBottom: 12, padding: '0.75rem' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8, paddingLeft: 4 }}>
+              Sosyal ağ
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <NetworkGraph players={np} edges={edges} width={380} height={300} showLabels={true} />
             </div>
-          )
-        })}
-        <div className="sep" />
-        <p style={{ fontSize: 13, color: 'var(--hint)', textAlign: 'center' }}>
-          Host yeni turu başlatana kadar bekle…
-        </p>
+          </div>
+        )}
+
+        {/* ── DEVAM / BEKLE ── */}
+        <div className="card anim-fade-up" style={{ textAlign: 'center' }}>
+          {session.autoMode ? (
+            <>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+                {Object.keys(session.readyForNext || {}).length} / {players.length} hazır
+              </p>
+              <button
+                className="btn btn-accent"
+                style={{ width: '100%', justifyContent: 'center', padding: 13, borderRadius: 12, fontSize: 15 }}
+                onClick={async () => {
+                  setReadyPressed(true)
+                  await markReadyForNext(code, me.id)
+                }}
+                disabled={readyPressed}
+              >
+                {readyPressed ? '✓ Hazırım!' : 'Devam →'}
+              </button>
+              {session.currentRound && session.plannedTopics && (
+                <p style={{ fontSize: 11, color: 'var(--hint)', marginTop: 8 }}>
+                  Tur {session.currentRound} / {session.plannedTopics.length}
+                </p>
+              )}
+            </>
+          ) : (
+            <p style={{ fontSize: 13, color: 'var(--hint)' }}>
+              Host yeni turu başlatana kadar bekle…
+            </p>
+          )}
+        </div>
+
       </div>
     </div>
   )

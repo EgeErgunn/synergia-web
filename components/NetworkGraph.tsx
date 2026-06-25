@@ -31,7 +31,7 @@ function lerp(c1: string, c2: string, t: number): string {
 function getPlayerColor(player: NetworkPlayer, allPlayers: NetworkPlayer[]): string {
   const RED = '#c01717'
   const n = allPlayers.length
-  const qualifyingRanks = n <= 3 ? [1] : n <= 7 ? [1, 2] : [1, 2, 3]
+  const qualifyingRanks = n <= 3 ? [1] : n <= 5 ? [1, 2] : n <= 8 ? [1, 2, 3] : [1, 2, 3, 4]
 
   // categoryRanks yoksa topicScores'a düş
   if (!player.categoryRanks) {
@@ -40,35 +40,45 @@ function getPlayerColor(player: NetworkPlayer, allPlayers: NetworkPlayer[]): str
 
   const cats: CategoryKey[] = ['analytical', 'kinesthetic', 'social', 'creative', 'verbal']
   
-  const qualified: { cat: CategoryKey; bestRank: number }[] = []
+  const qualified: { cat: CategoryKey; bestRank: number; percentage: number }[] = []
 
   cats.forEach(cat => {
     const ranks = player.categoryRanks![cat]
     if (!ranks || ranks.length === 0) return
-    // Bu kategoride en iyi sırası kaç?
+
+    const weightedScore = ranks.reduce((sum, r) => {
+      if (!qualifyingRanks.includes(r)) return sum
+
+      if (r === 1) return sum + 1.0
+      if (r === 2) return sum + 0.8
+      if (r === 3) return sum + 0.5
+      return sum
+    }, 0)
+
+    if (weightedScore === 0) return  // hiç qualifying sıraya girmemiş
+
+    // 2. Kategori Bazlı Güven Çarpanı (Kritik Değişiklik)
+    // Güven skorunu toplam tura değil, bu kategoride OYNANAN tura bağlıyoruz
+    const catRounds = ranks.length
+    const catConfidence = catRounds >= 5 ? 1.0
+      : catRounds === 4 ? 0.95
+      : catRounds === 2 || catRounds === 3 ? 0.85
+      : catRounds === 1 ? 0.70
+      : 0
+
+    const maxPossible = ranks.length * 1.0
+    const percentage = (weightedScore / maxPossible) * catConfidence
+
     const bestRank = Math.min(...ranks)
-    if (qualifyingRanks.includes(bestRank)) {
-      qualified.push({ cat, bestRank })
-    }
+    qualified.push({ cat, bestRank, percentage })
   })
 
   if (qualified.length === 0) return RED
 
   // En iyi sıraya sahip kategori
-  qualified.sort((a, b) => {
-  // Önce 1.'lik sayısına bak
-  const aOnes = player.categoryRanks![a.cat].filter(r => r === 1).length
-  const bOnes = player.categoryRanks![b.cat].filter(r => r === 1).length
-  if (bOnes !== aOnes) return bOnes - aOnes  // fazla 1.'lik önce
+  qualified.sort((a, b) => b.percentage - a.percentage)
 
-  // Eşitse en iyi sıraya bak
-  if (a.bestRank !== b.bestRank) return a.bestRank - b.bestRank
 
-  // Hala eşitse qualifying sıra sayısına bak
-  const aCount = player.categoryRanks![a.cat].filter(r => qualifyingRanks.includes(r)).length
-  const bCount = player.categoryRanks![b.cat].filter(r => qualifyingRanks.includes(r)).length
-  return bCount - aCount
-})
   return CATEGORY_META[qualified[0].cat].color
 }
 
